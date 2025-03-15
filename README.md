@@ -310,4 +310,9 @@ With over **1,078 Git commits** and **872 deployments**, we have built a solid s
 
 We are proud to present this project and look forward to its potential contributions to Dawson Road Maintenance's operational goals.
 
+License
+This project is licensed under the MIT License.
+
+
+
 
