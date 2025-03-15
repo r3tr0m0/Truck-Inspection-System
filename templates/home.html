@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Truck Inspection System{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    /* Reset and base styles */
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+        line-height: 1.6;
+    }
+
+    /* Header Styles */
+    .header {
+        background-color: #333; /* Dark background */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        border-bottom: 3px solid #ff0000;
+    }
+
+    .header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo {
+        height: 40px;
+    }
+
+    .logo img {
+        height: 100%;
+        width: auto;
+    }
+
+    /* Main Content Styles */
+    .content {
+        margin-top: 80px;
+        text-align: center;
+        padding: 60px 20px;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 80px);
+    }
+
+    .content h1 {
+        font-size: 2.5em;
+        color: #333;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    .content p {
+        font-size: 1.2em;
+        color: #666;
+        margin-bottom: 40px;
+    }
+
+    /* Mode Buttons */
+    .mode-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .mode-buttons button {
+        padding: 15px 30px;
+        font-size: 1.1em;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #444;
+        color: white;
+        transition: all 0.3s ease;
+        min-width: 200px;
+        text-transform: uppercase;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+
+    .mode-buttons button:hover {
+        background-color: #444;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .header-container {
+            padding: 10px 15px;
+        }
+
+        .content {
+            padding: 40px 15px;
+        }
+
+        .content h1 {
+            font-size: 2em;
+        }
+
+        .mode-buttons button {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+
+    .mode-toggle {
+        display: flex;
+        align-items: center;
+    }
+
+    .mode-label-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mode-text {
+        color: #e7e4e4;
+        font-size: 14px;
+        font-weight: 600;
+        margin-right: 2px;
+    }
+
+    .mode-label {
+        color: #333;
+        font-size: 14px;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+        margin: 0 4px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #333;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .mode-buttons button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="header">
+    <div class="header-container">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='image.png') }}" alt="Daimler Logo">
+        </div>
+        <div class="mode-toggle">
+            <div class="mode-label-group">
+                <span class="mode-text">Mode</span>
+                <span class="mode-label">Development</span>
+                <label class="switch">
+                    <input type="checkbox" id="modeToggle">
+                    <span class="slider round"></span>
+                </label>
+                <span class="mode-label">Production</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<div class="content">
+    <h1>Truck Inspection System</h1>
+    <p>For efficient fleet management and safety compliance</p>
+    <div class="mode-buttons">
+        <button onclick="location.href='/all-geofence-alerts'">Development Mode</button>
+        <button onclick="location.href='/production'">Production Mode</button>
+        <button onclick="location.href='/settings'">Settings</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modeToggle = document.getElementById('modeToggle');
+    const devButton = document.querySelector('button[onclick*="all-geofence-alerts"]');
+    const prodButton = document.querySelector('button[onclick*="production"]');
+
+    function updateButtons(isProd) {
+        if (isProd) {
+            devButton.classList.add('disabled');
+            prodButton.classList.remove('disabled');
+            fetch('/settings/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    setting_name: 'app_mode',
+                    value: 'production'
+                })
+            });
+        } else {
+            prodButton.classList.add('disabled');
+            devButton.classList.remove('disabled');
+            fetch('/settings/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    setting_name: 'app_mode',
+                    value: 'development'
+                })
+            });
+        }
+    }
+
+    // Check current mode from database on page load
+    fetch('/settings/get/app_mode')
+        .then(response => response.json())
+        .then(data => {
+            const isProd = data.value === 'production';
+            modeToggle.checked = isProd;
+            updateButtons(isProd);
+        });
+
+    modeToggle.addEventListener('change', function() {
+        updateButtons(this.checked);
+    });
+});
+
+let refreshTimer;
+
+function startAutoRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(function() {
+        window.location.reload();
+    }, 2500); // 2.5 seconds = 2500 milliseconds
+}
+
+// Start auto-refresh when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startAutoRefresh();
+});
+
+// Restart refresh timer when user interacts with the page
+document.addEventListener('mousemove', function() {
+    startAutoRefresh();
+});
+</script>
+{% endblock %}

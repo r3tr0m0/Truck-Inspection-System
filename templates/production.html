@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Production Mode - Truck Inspection System{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .container {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        padding: 20px;
+        margin-top: 80px;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .main-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Table Styles - Matching Development Mode */
+    .table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow-x: auto;
+        max-height: calc(100vh - 200px);
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    table { 
+        border-collapse: collapse; 
+        width: 100%;
+        margin-top: 0;
+        font-size: 14px;
+        min-width: 800px;
+    }
+
+    th, td { 
+        padding: 12px; 
+        text-align: left; 
+        border: 1px solid #eee;
+        vertical-align: top;
+    }
+
+    th { 
+        background-color: #333;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        font-weight: 500;
+        padding: 8px;
+    }
+
+    tr:hover { 
+        background-color: #f5f5f5; 
+    }
+
+    /* Existing supervisor panel styles */
+    .supervisor-panel {
+        width: 300px;
+        min-width: 300px;
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 5px;
+        height: fit-content;
+    }
+
+    .yard-select {
+        width: 100%;
+        margin-bottom: 15px;
+        padding: 8px;
+    }
+
+    .supervisor-list {
+        margin-top: 15px;
+    }
+
+    .supervisor-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 8px;
+        background: white;
+        border-radius: 4px;
+    }
+
+    .supervisor-checkbox {
+        margin-right: 10px;
+    }
+
+    .supervisor-info {
+        font-size: 14px;
+    }
+
+    .supervisor-name {
+        font-weight: bold;
+    }
+
+    .supervisor-email {
+        color: #666;
+        font-size: 12px;
+    }
+
+    .save-button {
+        width: 100%;
+        padding: 10px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 15px;
+    }
+
+    .save-button:hover {
+        background: #444;
+    }
+
+    .yard-selection {
+        display: flex;
+        gap: 10px;
+        margin: 15px 0 0 0;
+        align-items: center; /* Add this to vertically center items */
+    }
+    
+    .yard-select {
+        flex: 1;
+        height: 40px; /* Set explicit height */
+        padding: 0 12px; /* Adjust padding */
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: white;
+        font-size: 14px;
+    }
+    
+    .select-yard-button {
+        height: 40px; /* Match select height */
+        padding: 0 15px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 40px; /* Match height for vertical centering */
+        white-space: nowrap; /* Prevent text wrapping */
+    }
+    
+    .select-yard-button:hover {
+        background: #45a049;
+    }
+
+    .selected-yard-info {
+        margin: 15px 0;
+        padding: 10px;
+        background: #e8f5e9;
+        border-radius: 4px;
+    }
+
+    .selected-yard-info h4 {
+        margin: 0;
+        color: #2e7d32;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .container {
+            flex-direction: column;
+        }
+
+        .supervisor-panel {
+            width: auto;
+            min-width: 0;
+        }
+
+        .main-content {
+            width: 100%;
+        }
+    }
+
+    /* Content Styles */
+    .content {
+        margin-top: 80px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 80px);
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Table Styles */
+    .table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow-x: auto;
+        max-height: calc(100vh - 200px);
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    table { 
+        border-collapse: collapse; 
+        width: 100%;
+        margin-top: 0;
+        font-size: 14px;
+        min-width: 1400px;
+    }
+
+    th, td { 
+        padding: 12px; 
+        text-align: left; 
+        border: 1px solid #eee;
+        vertical-align: top;
+    }
+
+    th { 
+        background-color: #333;  /* Changed from #e31837 (Daimler red) to #333 (grey) */
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        font-weight: 500;
+        padding: 8px;
+    }
+
+    /* Refresh Controls */
+    .refresh-controls { 
+        background-color: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    tr.checking { 
+        background-color: transparent; 
+    }
+    tr:hover { 
+        background-color: #f5f5f5; 
+    }
+    .refresh-note { 
+        color: #666; 
+        font-size: 0.9em;
+    }
+    ul { 
+        margin: 0; 
+        padding-left: 20px;
+        list-style-type: none;
+    }
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #autoRefreshCheckbox {
+        margin: 0;
+    }
+    .numeric-cell {
+        text-align: right;
+        font-family: monospace;
+    }
+    .coordinator-list {
+        padding: 0;
+        margin: 0;
+    }
+    .coordinator-item {
+        margin-bottom: 4px;
+    }
+    .unavailable {
+        color: #999;
+        font-style: italic;
+    }
+    .checking-status {
+        color: #856404;
+        background-color: #fff3cd;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    .coordinates {
+        font-family: inherit;
+        white-space: normal;
+        padding: 0;
+    }
+    .location-details {
+        margin: 0;
+        padding: 0;
+    }
+    .location-details .address {
+        display: block;
+        margin-top: 4px;
+    }
+    .modem-not-found {
+        color: #dc3545;
+    }
+    .email-status {
+        text-align: center;
+    }
+    .email-status span {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    .email-status span[style*="green"] {
+        background-color: #e8f5e9;
+    }
+    .email-status span[style*="red"] {
+        background-color: #ffebee;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="main-content">
+        <h2>Production Alerts</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Unit</th>
+                        <th>Yard</th>
+                        <th>Alert Time</th>
+                        <th>Inspection Date</th>
+                        <th>Inspection Status</th>
+                        <th>Supervisors</th>
+                        <th>Email Status</th>
+                        <th>Email Sent Time</th>
+                    </tr>
+                </thead>
+                <tbody id="alertsTableBody">
+                    <!-- Alerts will be populated here via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="supervisor-panel">
+        <h3>Road Foreman Selection</h3>
+        <div class="yard-selection">
+            <select class="yard-select" id="yardSelect">
+                <option value="">Select Yard</option>
+            </select>
+            <button id="selectYard" class="select-yard-button">Select Yard</button>
+        </div>
+
+        <div id="selectedYardInfo" class="selected-yard-info" style="display: none;">
+            <h4>Selected Yard: <span id="currentYard"></span></h4>
+        </div>
+
+        <div id="supervisorListContainer" style="display: none;">
+            <h4 style="margin: 20px 0 10px 0; color: #333;">Supervisor List</h4>
+            <div class="supervisor-list" id="supervisorList">
+                <!-- Supervisors will be populated here -->
+            </div>
+        </div>
+        
+        <button id="saveSelections" class="save-button" style="display: none;">Save Selections</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const yardSelect = document.getElementById('yardSelect');
+    const supervisorList = document.getElementById('supervisorList');
+    const selectYardBtn = document.getElementById('selectYard');
+    const selectedYardInfo = document.getElementById('selectedYardInfo');
+    const currentYardSpan = document.getElementById('currentYard');
+    const saveSelectionsBtn = document.getElementById('saveSelections');
+
+    function loadAlerts(yard = '', supervisor = '') {
+        fetch(`/production/alerts?yard=${encodeURIComponent(yard)}&supervisor_id=${encodeURIComponent(supervisor)}`)
+            .then(response => response.json())
+            .then(data => {
+                alertsTableBody.innerHTML = '';
+                data.alerts.forEach(alert => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${alert.unit}</td>
+                        <td>${alert.yard}</td>
+                        <td>${alert.alert_time}</td>
+                        <td>${alert.completion_date}</td>
+                        <td>${alert.inspection_status}</td>
+                        <td>
+                            <ul class="coordinator-list">
+                                ${formatSupervisors(alert.supervisors)}
+                            </ul>
+                        </td>
+                        <td class="email-status">
+                            ${alert.email_sent ? 
+                                '<span style="color: green;">Sent</span>' : 
+                                '<span style="color: red;">Not Sent</span>'}
+                        </td>
+                        <td>${alert.email_sent_time}</td>
+                    `;
+                    alertsTableBody.appendChild(row);
+                });
+            });
+    }
+
+    function formatSupervisors(supervisors) {
+        if (!supervisors || supervisors.length === 0) {
+            return '<li class="unavailable">No supervisors assigned</li>';
+        }
+        return supervisors.map(sup => `
+            <li class="coordinator-item">
+                <strong>${sup['Employee Name']}</strong><br>
+                ${sup['Email']}
+            </li>
+        `).join('');
+    }
+
+    // Load initial data
+    loadAlerts();
+
+    // Load yards
+    console.log("Starting to fetch yards from /production/yards");
+    fetch('/production/yards')
+        .then(response => {
+            console.log("Received response:", response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Received yards data:", data);
+            yardSelect.innerHTML = '<option value="">Select Yard</option>';
+            if (data.yards && Array.isArray(data.yards)) {
+                data.yards.forEach(yard => {
+                    console.log("Adding yard to dropdown:", yard);
+                    const option = new Option(yard, yard);
+                    yardSelect.add(option);
+                });
+            } else {
+                console.error("Invalid yards data format:", data);
+            }
+        })
+        .catch(error => {
+            console.error("Error loading yards:", error);
+            yardSelect.innerHTML = '<option value="">Error loading yards</option>';
+        });
+
+    // Handle yard selection
+    selectYardBtn.addEventListener('click', function() {
+        const selectedYard = yardSelect.value;
+        const supervisorListContainer = document.getElementById('supervisorListContainer');
+        
+        if (!selectedYard) {
+            alert('Please select a yard first');
+            return;
+        }
+
+        // Disable the yard select and select button until save
+        yardSelect.disabled = true;
+        selectYardBtn.disabled = true;
+        
+        supervisorList.innerHTML = '';
+        currentYardSpan.textContent = selectedYard;
+        selectedYardInfo.style.display = 'block';
+        supervisorListContainer.style.display = 'block';
+        saveSelectionsBtn.style.display = 'block';
+
+        fetch(`/production/supervisors/${encodeURIComponent(selectedYard)}`)
+            .then(response => response.json())
+            .then(data => {
+                data.supervisors.forEach(supervisor => {
+                    const div = document.createElement('div');
+                    div.className = 'supervisor-item';
+                    div.innerHTML = `
+                        <input type="checkbox" 
+                               class="supervisor-checkbox" 
+                               value="${supervisor.id}"
+                               ${supervisor.is_selected ? 'checked' : ''}
+                               data-yard="${selectedYard}">
+                        <div class="supervisor-info">
+                            <div class="supervisor-name">${supervisor['Employee Name']}</div>
+                            <div class="supervisor-email">${supervisor['Email']}</div>
+                        </div>
+                    `;
+                    supervisorList.appendChild(div);
+                });
+            });
+    });
+
+    // Save selections
+    document.getElementById('saveSelections').addEventListener('click', function() {
+        const selectedYard = yardSelect.value;
+        const selectedSupervisors = Array.from(document.querySelectorAll('.supervisor-checkbox:checked'))
+            .map(checkbox => {
+                const infoDiv = checkbox.nextElementSibling;
+                return {
+                    supervisor_id: checkbox.value,
+                    supervisor_name: infoDiv.querySelector('.supervisor-name').textContent,
+                    supervisor_email: infoDiv.querySelector('.supervisor-email').textContent
+                };
+            });
+
+        fetch('/production/save-filters', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                yard: selectedYard,
+                selections: selectedSupervisors
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Road Foreman selections saved successfully');
+                // Re-enable yard selection after successful save
+                yardSelect.disabled = false;
+                selectYardBtn.disabled = false;
+                // Clear current selection
+                supervisorList.innerHTML = '';
+                selectedYardInfo.style.display = 'none';
+                supervisorListContainer.style.display = 'none';
+                saveSelectionsBtn.style.display = 'none';
+            } else {
+                alert('Error saving selections');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Application Settings{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    /* Content Styles */
+    .content {
+        margin-top: 80px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 80px);
+    }
+
+    .settings-container { 
+        max-width: 800px; 
+        margin: 0 auto;
+        background-color: white;
+        padding: 30px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .setting-group { 
+        border: 1px solid #eee; 
+        padding: 20px;
+        margin-bottom: 25px; 
+        border-radius: 5px;
+        background-color: #f8f9fa;
+    }
+
+    .setting-group-title { 
+        font-size: 1.3em;
+        margin-bottom: 20px;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .setting-item { 
+        margin-bottom: 20px; 
+        padding: 15px; 
+        border: 1px solid #eee;
+        border-radius: 5px;
+        background-color: white;
+    }
+
+    .save-btn { 
+        padding: 12px 25px;
+        background-color: #333;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+    .save-btn:hover { 
+        background-color: #444;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* Message Styles */
+    .message { 
+        padding: 15px;
+        margin-bottom: 25px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .setting-header { 
+        font-weight: bold; 
+        margin-bottom: 10px; 
+    }
+    .setting-description { 
+        color: #666; 
+        margin-bottom: 10px; 
+    }
+    input[type="number"] { 
+        padding: 5px; 
+        width: 100px; 
+    }
+    input[type="checkbox"] { 
+        margin-right: 10px; 
+    }
+    .success { 
+        background-color: #dff0d8; 
+        color: #3c763d; 
+    }
+    .error { 
+        background-color: #f2dede; 
+        color: #a94442; 
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <h1>Application Settings</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('settings.save_settings') }}">
+        <!-- Inspection Settings -->
+        <div class="setting-group">
+            <div class="setting-group-title">Inspection Settings</div>
+            {% for setting in settings %}
+                {% if setting[0] == 'inspection_period_hours' %}
+                    <div class="setting-item">
+                        <div class="setting-header">{{ setting[3] }}</div>
+                        <div class="setting-description">{{ setting[4] }}</div>
+                        <input type="number" name="{{ setting[0] }}" value="{{ setting[1] }}" min="1" step="1" required>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Movement Check Settings -->
+        <div class="setting-group">
+            <div class="setting-group-title">Movement Check Settings</div>
+            {% for setting in settings %}
+                {% if setting[0] == 'check_movement_before_email' %}
+                    <div class="setting-item">
+                        <div class="setting-header">
+                            <input type="hidden" name="{{ setting[0] }}" value="false">
+                            <input type="checkbox" 
+                                   name="{{ setting[0] }}" 
+                                   value="true" 
+                                   {% if setting[1].lower() == 'true' %}checked{% endif %}>
+                            {{ setting[3] }}
+                        </div>
+                        <div class="setting-description">{{ setting[4] }}</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="save-btn">Save Settings</button>
+    </form>
+</div>
+{% endblock %}

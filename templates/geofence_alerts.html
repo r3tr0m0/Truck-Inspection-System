@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Geofence Alerts - Truck Inspection System{% endblock %}
+{% block styles %}
+{{ super() }}
+<style>
+    /* Content Styles */
+    .content {
+        margin-top: 80px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 80px);
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Table Styles */
+    .table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow-x: auto;
+        max-height: calc(100vh - 200px);
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    table { 
+        border-collapse: collapse; 
+        width: 100%;
+        margin-top: 0;
+        font-size: 14px;
+        min-width: 1400px;
+    }
+
+    th, td { 
+        padding: 12px; 
+        text-align: left; 
+        border: 1px solid #eee;
+        vertical-align: top;
+    }
+
+    th { 
+        background-color: #333;  /* Changed from #e31837 (Daimler red) to #333 (grey) */
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        font-weight: 500;
+        padding: 8px;
+    }
+
+    /* Refresh Controls */
+    .refresh-controls { 
+        background-color: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    tr.checking { 
+        background-color: #fff3cd; 
+    }
+    tr:hover { 
+        background-color: #f5f5f5; 
+    }
+    .refresh-note { 
+        color: #666; 
+        font-size: 0.9em;
+    }
+    ul { 
+        margin: 0; 
+        padding-left: 20px;
+        list-style-type: none;
+    }
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #autoRefreshCheckbox {
+        margin: 0;
+    }
+    .numeric-cell {
+        text-align: right;
+        font-family: monospace;
+    }
+    .coordinator-list {
+        padding: 0;
+        margin: 0;
+    }
+    .coordinator-item {
+        margin-bottom: 4px;
+    }
+    .unavailable {
+        color: #999;
+        font-style: italic;
+    }
+    .checking-status {
+        color: #856404;
+        background-color: #fff3cd;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    .coordinates {
+        font-family: inherit;
+        white-space: normal;
+        padding: 0;
+    }
+    .location-details {
+        margin: 0;
+        padding: 0;
+    }
+    .location-details .address {
+        display: block;
+        margin-top: 4px;
+    }
+    .modem-not-found {
+        color: #dc3545;
+    }
+    .email-status {
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>All Trucks that Left Geofence</h1>
+<div class="refresh-controls">
+    <div class="checkbox-wrapper">
+        <input type="checkbox" id="autoRefreshCheckbox" checked>
+        <label for="autoRefreshCheckbox">Auto-refresh every 10 seconds</label>
+    </div>
+    <span class="refresh-note" id="refreshStatus">Auto-refresh is enabled</span>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Unit</th>
+                <th>Yard</th>
+                <th>Alert Time</th>
+                <th>Inspection Date</th>
+                <th>Inspection Status</th>
+                <th>Shift</th>
+                <th>Truck Coordinates</th>
+                <th>Yard Coordinates</th>
+                <th>Supervisors</th>
+                <th>Distance at Alert</th>
+                <th>Distance After 10s</th>
+                <th>Distance After 30s</th> 
+                <th>Speed at Alert</th>
+                <th>Speed After 10s</th>
+                <th>Speed After 30s</th>
+                <th>Moving Status</th>
+                <th>Email Status</th>
+                <th>Email Sent Time</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for alert in alerts %}
+            <tr class="{{ 'checking' if alert.is_checking else '' }}">
+                <td>{{ alert.unit }}</td>
+                <td>{{ alert.yard }}</td>
+                <td>{{ alert.alert_time }}</td>
+                <td>{{ alert.completion_date }}</td>
+                <td>{{ alert.inspection_status }}</td>
+                <td>{{ alert.shift }}</td>
+                <td class="coordinates">
+                    {% if "Could Not Fetch Skyhawk Data" in alert.truck_details %}
+                        <span class="modem-not-found">{{ alert.truck_details }}</span>
+                    {% else %}
+                        {% set coords = alert.truck_details.split(',') if ',' in alert.truck_details else [] %}
+                        {% if coords|length >= 2 %}
+                            <div class="location-details">
+                                {{ coords[0] }},
+                                {{ coords[1] }}
+                                {% if 'Location:' in alert.truck_details %}
+                                    <span class="address">
+                                        {{ alert.truck_details.split('Location:')[1].strip() }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <span class="unavailable">{{ alert.truck_details }}</span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td class="coordinates">{{ alert.yard_coordinates }}</td>
+                <td>
+                    <ul class="coordinator-list">
+                    {% if alert.supervisors %}
+                        {% for sup in alert.supervisors %}
+                            <li class="coordinator-item">
+                                <strong>{{ sup['Employee Name'] }}</strong><br>
+                                {{ sup['Email'] }}
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="unavailable">No supervisors assigned</li>
+                    {% endif %}
+                    </ul>
+                </td>
+                <td class="numeric-cell">
+                    {% if alert.initial_distance == "Unavailable" %}
+                        <span class="unavailable">{{ alert.initial_distance }}</span>
+                    {% else %}
+                        {{ alert.initial_distance }}
+                    {% endif %}
+                </td>
+                <td class="numeric-cell">
+                    {% if alert.distance_after_10s == "Unavailable" %}
+                        <span class="unavailable">{{ alert.distance_after_10s }}</span>
+                    {% else %}
+                        {{ alert.distance_after_10s }}
+                    {% endif %}
+                </td>
+                <td class="numeric-cell">
+                    {% if alert.distance_after_30s == "Unavailable" %}
+                        <span class="unavailable">{{ alert.distance_after_30s }}</span>
+                    {% else %}
+                        {{ alert.distance_after_30s }}
+                    {% endif %}
+                </td>
+                <td class="numeric-cell">
+                    {% if alert.speed_initial == "Unavailable" %}
+                        <span class="unavailable">{{ alert.speed_initial }}</span>
+                    {% else %}
+                        {{ alert.speed_initial }}
+                    {% endif %}
+                </td>
+                <td class="numeric-cell">
+                    {% if alert.speed_10s == "Unavailable" %}
+                        <span class="unavailable">{{ alert.speed_10s }}</span>
+                    {% else %}
+                        {{ alert.speed_10s }}
+                    {% endif %}
+                </td>
+                <td class="numeric-cell">
+                    {% if alert.speed_30s == "Unavailable" %}
+                        <span class="unavailable">{{ alert.speed_30s }}</span>
+                    {% else %}
+                        {{ alert.speed_30s }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if alert.moving_status == "Checking movement..." %}
+                        <span class="checking-status">{{ alert.moving_status }}</span>
+                    {% else %}
+                        {{ alert.moving_status }}
+                    {% endif %}
+                </td>
+                <td class="email-status">
+                    {% if alert.email_sent %}
+                        <span style="color: green;">Sent</span>
+                    {% else %}
+                        <span style="color: red;">Not Sent</span>
+                    {% endif %}
+                </td>
+                <td>{{ alert.email_sent_time }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let refreshTimer;
+
+    function startAutoRefresh() {
+        clearTimeout(refreshTimer); // Clear any existing timer
+        refreshTimer = setTimeout(function() {
+            window.location.reload();
+        }, 10000);
+    }
+
+    function updateRefreshStatus(isEnabled) {
+        const statusElement = document.getElementById('refreshStatus');
+        statusElement.textContent = isEnabled ? 
+            'Auto-refresh is enabled' : 
+            'Auto-refresh is disabled';
+    }
+
+    document.getElementById('autoRefreshCheckbox').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            startAutoRefresh();
+            updateRefreshStatus(true);
+        } else {
+            clearTimeout(refreshTimer);
+            updateRefreshStatus(false);
+        }
+    });
+
+    // Start auto-refresh by default
+    if (document.getElementById('autoRefreshCheckbox').checked) {
+        startAutoRefresh();
+    }
+
+    // Restart refresh timer when user interacts with the page
+    document.addEventListener('mousemove', function() {
+        if (document.getElementById('autoRefreshCheckbox').checked) {
+            startAutoRefresh();
+        }
+    });
+</script>
+{% endblock %}
